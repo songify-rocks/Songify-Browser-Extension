@@ -1,203 +1,441 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="UTF-8">
-    <title>Songify Settings</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --songify-green: #1ED760; /* Songify brand green */
-            --songify-dark: #191414;  /* Dark color for text/background */
-            --songify-grey: #b3b3b3;  /* Grey for secondary text */
-            --songify-light-grey: #282828; /* Light grey for cards */
-        }
-        body {
-            width: 320px;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            color: white;
-            margin: 0;
-            background-color: var(--songify-dark);
-        }
-        .container {
-            padding: 20px;
-        }
-        .header {
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-        .logo {
-            width: 60px;
-            height: auto;
-        }
-        .title-container {
-            display: flex;
-            flex-direction: column;
-        }
-        .title-songify {
-            font-family: 'Pacifico', cursive;
-            font-size: 24px;
-            margin: 0;
-            color: var(--songify-green);
-            line-height: 1.2;
-        }
-        .title-companion {
-            font-size: 16px;
-            font-weight: 500;
-            margin: 0;
-            color: white;
-        }
-        .form-group {
-            margin-bottom: 20px;
-            background-color: var(--songify-light-grey);
-            padding: 16px;
-            border-radius: 8px;
-        }
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 600;
-            font-size: 14px;
-            color: white;
-        }
-        input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 14px;
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-            transition: background-color 0.2s;
-        }
-        input[type="number"]:focus {
-            outline: none;
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        input[type="number"]::placeholder {
-            color: var(--songify-grey);
-        }
-        button {
-            background-color: var(--songify-green);
-            color: black;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 500px; /* Rounded button like on Songify website */
-            cursor: pointer;
-            width: 100%;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            transition: all 0.2s;
-        }
-        button:hover {
-            background-color: #1db954;
-            transform: scale(1.03);
-        }
-        .status {
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .status.success {
-            background-color: rgba(30, 215, 96, 0.2);
-            color: var(--songify-green);
-        }
-        .status.error {
-            background-color: rgba(235, 87, 87, 0.2);
-            color: #eb5757;
-        }
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 15px;
-            padding: 14px;
-            border-radius: 6px;
-            background: var(--songify-light-grey);
-        }
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #bdc1c6;
-        }
-        .status-indicator.connected {
-            background: var(--songify-green);
-        }
-        .status-indicator.disconnected {
-            background: #eb5757;
-        }
-        .status-text {
-            font-size: 14px;
-            color: white;
-        }
-        .footer {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: var(--songify-grey);
-        }
-        a {
-            color: var(--songify-green);
-            text-decoration: none;
-            transition: all 0.2s;
-            position: relative;
-        }
-        a:hover {
-            color: white;
-        }
-        a::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 1px;
-            bottom: -2px;
-            left: 0;
-            background-color: var(--songify-green);
-            transform: scaleX(0);
-            transform-origin: bottom right;
-            transition: transform 0.3s;
-        }
-        a:hover::after {
-            transform: scaleX(1);
-            transform-origin: bottom left;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Songify Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --songify-green: #1ED760;
+      /* Songify brand green */
+      --songify-dark: #191414;
+      /* Dark color for text/background */
+      --songify-grey: #b3b3b3;
+      /* Grey for secondary text */
+      --songify-light-grey: #282828;
+      /* Light grey for cards */
+    }
+
+    body {
+      width: 320px;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: white;
+      margin: 0;
+      background-color: var(--songify-dark);
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .header {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .logo {
+      width: 60px;
+      height: auto;
+    }
+
+    .title-container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title-songify {
+      font-family: 'Pacifico', cursive;
+      font-size: 24px;
+      margin: 0;
+      color: var(--songify-green);
+      line-height: 1.2;
+    }
+
+    .title-companion {
+      font-size: 16px;
+      font-weight: 500;
+      margin: 0;
+      color: white;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      background-color: var(--songify-light-grey);
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      color: white;
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 14px;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      transition: background-color 0.2s;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus {
+      outline: none;
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    input[type="number"]::placeholder,
+    input[type="text"]::placeholder {
+      color: var(--songify-grey);
+    }
+
+    button {
+      background-color: var(--songify-green);
+      color: black;
+      padding: 12px 20px;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background-color: #1db954;
+      transform: scale(1.03);
+    }
+
+    .add-term-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .add-term-row input {
+      flex: 1;
+    }
+
+    .add-term-row button {
+      width: auto;
+      padding: 8px 12px;
+    }
+
+    .filter-terms {
+      margin-top: 15px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .filter-term-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .filter-term-text {
+      word-break: break-all;
+    }
+
+    .remove-term {
+      background: rgba(255, 0, 0, 0.3);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      padding: 0;
+      transition: background-color 0.2s;
+    }
+
+    .remove-term:hover {
+      background: rgba(255, 0, 0, 0.5);
+      transform: scale(1.1);
+    }
+
+    .tab-container {
+      margin-bottom: 20px;
+    }
+
+    .tab-buttons {
+      display: flex;
+      margin-bottom: 15px;
+    }
+
+    .tab-button {
+      flex: 1;
+      text-align: center;
+      padding: 12px 10px;
+      min-height: 20px;
+      background-color: var(--songify-light-grey);
+      border: none;
+      color: var(--songify-grey);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tab-button:first-child {
+      border-top-left-radius: 8px;
+      border-bottom-left-radius: 8px;
+    }
+
+    .tab-button:last-child {
+      border-top-right-radius: 8px;
+      border-bottom-right-radius: 8px;
+    }
+
+    .tab-button.active {
+      background-color: var(--songify-green);
+      color: black;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .status {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status.success {
+      background-color: rgba(30, 215, 96, 0.2);
+      color: var(--songify-green);
+    }
+
+    .status.error {
+      background-color: rgba(235, 87, 87, 0.2);
+      color: #eb5757;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 15px;
+      padding: 14px;
+      border-radius: 6px;
+      background: var(--songify-light-grey);
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #bdc1c6;
+    }
+
+    .status-indicator.connected {
+      background: var(--songify-green);
+    }
+
+    .status-indicator.disconnected {
+      background: #eb5757;
+    }
+
+    .status-text {
+      font-size: 14px;
+      color: white;
+    }
+
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--songify-grey);
+    }
+
+    a {
+      color: var(--songify-green);
+      text-decoration: none;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    a:hover {
+      color: white;
+    }
+
+    a::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 1px;
+      bottom: -2px;
+      left: 0;
+      background-color: var(--songify-green);
+      transform: scaleX(0);
+      transform-origin: bottom right;
+      transition: transform 0.3s;
+    }
+
+    a:hover::after {
+      transform: scaleX(1);
+      transform-origin: bottom left;
+    }
+
+    .preview-container {
+      margin-top: 10px;
+    }
+
+    .preview-row {
+      margin-bottom: 10px;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .preview-label {
+      font-weight: 600;
+      color: var(--songify-grey);
+    }
+
+    .preview-value {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.07);
+      padding: 8px;
+      border-radius: 4px;
+      word-break: break-word;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    code {
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 11px;
+    }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <img src="icons/logo.png" alt="Songify Logo" class="logo">
-            <div class="title-container">
-                <span class="title-songify">Songify</span>
-                <span class="title-companion">Companion</span>
-            </div>
-        </div>
+  <div class="container">
+    <div class="header">
+      <img src="icons/logo.png" alt="Songify Logo" class="logo">
+      <div class="title-container">
+        <span class="title-songify">Songify</span>
+        <span class="title-companion">Companion</span>
+      </div>
+    </div>
+
+    <div class="tab-container">
+      <div class="tab-buttons">
+        <button class="tab-button active" data-tab="connection">Connection</button>
+        <button class="tab-button" data-tab="filters">Title Filters</button>
+      </div>
+
+      <div class="tab-content active" id="tab-connection">
         <div class="form-group">
-            <label for="port">WEBSOCKET PORT</label>
-            <input type="number" id="port" min="1" max="65535" placeholder="Enter port number (default: 65530)">
+          <label for="port">WEBSOCKET PORT</label>
+          <input type="number" id="port" min="1" max="65535" placeholder="Enter port number (default: 65530)">
         </div>
         <button id="save">Save Settings</button>
-        <div id="status" class="status" style="display: none;"></div>
         <div class="connection-status">
-            <div id="statusIndicator" class="status-indicator"></div>
-            <span id="statusText" class="status-text">Checking connection...</span>
+          <div id="statusIndicator" class="status-indicator"></div>
+          <span id="statusText" class="status-text">Checking connection...</span>
         </div>
-        <div class="footer">
-            <p>© 2025 <a href="https://songify.rocks" target="_blank">Songify</a> Browser Companion v1.0</p>
+      </div>
+
+      <div class="tab-content" id="tab-filters">
+        <div class="form-group" id="previewSection">
+          <label>CURRENT VIDEO DATA</label>
+          <div class="preview-container">
+            <div class="preview-row">
+              <span class="preview-label">Original Title:</span>
+              <span class="preview-value" id="originalTitle">Not available</span>
+            </div>
+            <div class="preview-row">
+              <span class="preview-label">Filtered Title:</span>
+              <span class="preview-value" id="filteredTitle">Not available</span>
+            </div>
+            <div class="preview-row">
+              <span class="preview-label">Channel:</span>
+              <span class="preview-value" id="channelName">Not available</span>
+            </div>
+          </div>
         </div>
+        <div class="form-group">
+          <label>TITLE FILTER TERMS</label>
+          <p style="font-size: 12px; color: var(--songify-grey); margin-top: 0;">
+            Enter terms to remove from video titles before sending to Songify
+          </p>
+          <div class="special-patterns">
+            <p style="font-size: 12px; color: var(--songify-grey); margin-top: 8px; margin-bottom: 4px;">
+              <strong>Special patterns:</strong>
+            </p>
+            <ul style="font-size: 12px; color: var(--songify-grey); margin-top: 0; padding-left: 20px;">
+              <li><code>[*]</code> - Removes ALL text in square brackets (e.g., "[Official Video]" → "")</li>
+              <li><code>(*)</code> - Removes all text in parentheses (e.g., "(Official Audio)" → "")</li>
+              <li><code>{*}</code> - Removes all text in curly braces (e.g., "{HD}" → "")</li>
+            </ul>
+            <p style="font-size: 12px; color: var(--songify-green); margin-top: 4px; margin-bottom: 4px;">
+              Adding special patterns will automatically reload the current YouTube page to apply changes.
+            </p>
+          </div>
+
+          <div class="add-term-row">
+            <input type="text" id="filterTerm" placeholder="Enter term to filter">
+            <button id="addTerm">Add</button>
+          </div>
+
+          <div class="filter-terms" id="filterTermsList">
+            <!-- Terms will be added here dynamically -->
+          </div>
+        </div>
+
+
+      </div>
     </div>
-    <script src="popup.js"></script>
+
+    <div id="status" class="status" style="display: none;"></div>
+
+    <div class="footer">
+      <p>© 2025 <a href="https://songify.rocks" target="_blank">Songify</a> Browser Companion v1.0</p>
+    </div>
+  </div>
+  <script src="popup.js"></script>
 </body>
-</html> 
+
+</html>

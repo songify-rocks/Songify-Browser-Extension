@@ -10,10 +10,12 @@
   },
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "scripting"
   ],
   "host_permissions": [
-    "*://*.youtube.com/*"
+    "*://*.youtube.com/*",
+    "*://music.youtube.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -29,7 +31,13 @@
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/watch*"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["*://music.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
     }
   ]
 } 
