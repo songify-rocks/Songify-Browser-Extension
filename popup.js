@@ -7,11 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterTermInput = document.getElementById('filterTerm');
     const addTermButton = document.getElementById('addTerm');
     const filterTermsList = document.getElementById('filterTermsList');
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
     const originalTitleElement = document.getElementById('originalTitle');
     const filteredTitleElement = document.getElementById('filteredTitle');
     const channelNameElement = document.getElementById('channelName');
+    const enableLoggingToggle = document.getElementById('enableLogging');
+    const manualFixButton = document.getElementById('manualFix');
     
     // Current video data
     let currentVideoData = {
@@ -20,54 +20,132 @@ document.addEventListener('DOMContentLoaded', () => {
         channel: null
     };
     
-    // Tab functionality
-    tabButtons.forEach(button => {
+    // Track the current URL to help with source detection
+    let currentTabUrl = '';
+    
+    // Main tab functionality
+    const mainTabButtons = document.querySelectorAll('.tab-button');
+    const mainTabContents = document.querySelectorAll('.tab-content');
+    
+    mainTabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const tabName = button.getAttribute('data-tab');
             
             // Update active tab button
-            tabButtons.forEach(btn => btn.classList.remove('active'));
+            mainTabButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             
             // Update active tab content
-            tabContents.forEach(content => content.classList.remove('active'));
+            mainTabContents.forEach(content => content.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
             
-            // Refresh video data when switching to filters tab
-            if (tabName === 'filters') {
+            // Refresh video data when switching to Now Playing tab
+            if (tabName === 'now-playing') {
                 requestVideoData();
             }
         });
     });
 
+    // Settings subtab functionality
+    const subtabButtons = document.querySelectorAll('.subtab-button');
+    const subtabContents = document.querySelectorAll('.subtab-content');
+    
+    subtabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const subtabName = button.getAttribute('data-subtab');
+            
+            // Update active subtab button
+            subtabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Update active subtab content
+            subtabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById(`subtab-${subtabName}`).classList.add('active');
+        });
+    });
+
     // Function to request current video data from the active tab
     function requestVideoData() {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0] && tabs[0].url && (tabs[0].url.includes('youtube.com/watch') || tabs[0].url.includes('music.youtube.com'))) {
-                chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_VIDEO_INFO' }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        updatePreviewSection(null);
-                        return;
-                    }
+        // First check if we have data in storage
+        chrome.storage.local.get(['currentVideoData'], (result) => {
+            if (result.currentVideoData && result.currentVideoData.timestamp) {
+                // Check if the data is still fresh (less than 30 seconds old)
+                const now = Date.now();
+                const dataAge = now - result.currentVideoData.timestamp;
+                
+                if (dataAge < 30000) {
+                    console.log('Using stored video data from storage (age:', dataAge, 'ms)');
+                    updatePreviewSection({
+                        originalTitle: result.currentVideoData.originalTitle,
+                        filteredTitle: result.currentVideoData.filteredTitle,
+                        channel: result.currentVideoData.channel,
+                        source: result.currentVideoData.source
+                    });
                     
-                    if (response && response.data) {
-                        updatePreviewSection(response.data);
-                    }
-                });
+                    // Still request fresh data, but don't wait for it to update the UI
+                    requestFreshVideoData(false);
+                    return;
+                } else {
+                    console.log('Stored video data is stale (age:', dataAge, 'ms), requesting fresh data');
+                }
             } else {
-                // Not on a YouTube video page
+                console.log('No stored video data, requesting fresh data');
+            }
+            
+            // If we don't have stored data or it's stale, request fresh data
+            requestFreshVideoData(true);
+        });
+    }
+
+    // Function to request fresh video data from content script
+    function requestFreshVideoData(updateUI = true) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0] && tabs[0].url) {
+                // Store the current URL for source detection
+                currentTabUrl = tabs[0].url;
+                
+                if (tabs[0].url.includes('youtube.com/watch') || tabs[0].url.includes('music.youtube.com')) {
+                    chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_VIDEO_INFO' }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            console.log('Error getting video info:', chrome.runtime.lastError);
+                            if (updateUI) updatePreviewSection(null);
+                            return;
+                        }
+                        
+                        if (response && response.data) {
+                            console.log('Received fresh video data:', response.data);
+                            if (updateUI) updatePreviewSection(response.data);
+                        } else if (updateUI) {
+                            updatePreviewSection(null);
+                        }
+                    });
+                } else if (updateUI) {
+                    // Not on a YouTube video page
+                    updatePreviewSection(null);
+                }
+            } else if (updateUI) {
+                // No active tab or no URL
                 updatePreviewSection(null);
             }
         });
     }
-    
+
     // Update the preview section with video data
     function updatePreviewSection(data) {
+        console.log('Updating preview section with data:', data);
+        
         if (data && data.originalTitle) {
             currentVideoData = data;
             originalTitleElement.textContent = data.originalTitle || 'Not available';
             filteredTitleElement.textContent = data.filteredTitle || 'Not available';
             channelNameElement.textContent = data.channel || 'Not available';
+            
+            // Store this data in localStorage as a backup
+            const storageData = {
+                ...data,
+                timestamp: Date.now()
+            };
+            chrome.storage.local.set({ popupVideoData: storageData });
             
             // Add information about the source (YouTube or YouTube Music)
             const previewContainer = document.querySelector('.preview-container');
@@ -88,92 +166,147 @@ document.addEventListener('DOMContentLoaded', () => {
             sourceTitle.textContent = 'Source:';
             
             const sourceValue = document.createElement('span');
-            sourceValue.className = 'preview-value';
+            sourceValue.className = 'preview-value source-logo-container';
             
-            // Check if we got data from YouTube Music
-            const isYouTubeMusic = data.artistName || data.songTitle || (data.source && data.source === 'youtube_music');
-            if (isYouTubeMusic) {
-                sourceValue.textContent = 'YouTube Music';
-                sourceValue.style.color = '#FF0000'; // Red color for YouTube Music
+            // Check if we got data from YouTube Music by examining data properties 
+            // or by checking if the current URL is from YouTube Music
+            const isYouTubeMusic = data.artistName || 
+                                   data.songTitle || 
+                                   (data.source && data.source === 'youtube_music') ||
+                                   currentTabUrl.includes('music.youtube.com');
+                                   
+            const isAmazonMusic = (data.source && data.source === 'amazon_music') ||
+                                 currentTabUrl.includes('music.amazon');
+            
+            // Create logo element
+            const logoImg = document.createElement('img');
+            logoImg.className = 'source-logo';
+            
+            if (isAmazonMusic) {
+                logoImg.src = 'icons/amazon-music-logo.png';
+                logoImg.alt = 'Amazon Music';
+                logoImg.title = 'Amazon Music';
+            } else if (isYouTubeMusic) {
+                logoImg.src = 'icons/youtube-music-logo.png';
+                logoImg.alt = 'YouTube Music';
+                logoImg.title = 'YouTube Music';
             } else {
-                sourceValue.textContent = 'YouTube';
+                logoImg.src = 'icons/youtube-logo.png';
+                logoImg.alt = 'YouTube';
+                logoImg.title = 'YouTube';
             }
             
+            sourceValue.appendChild(logoImg);
             sourceLabel.appendChild(sourceTitle);
             sourceLabel.appendChild(sourceValue);
             previewContainer.appendChild(sourceLabel);
             
             document.getElementById('previewSection').style.display = 'block';
-        } else {
-            originalTitleElement.textContent = 'No YouTube video detected';
-            filteredTitleElement.textContent = 'No YouTube video detected';
-            channelNameElement.textContent = 'No YouTube video detected';
             
-            // Add debug information about current tab
-            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-                if (tabs && tabs[0]) {
-                    const url = tabs[0].url;
-                    
-                    // Create debug info section
-                    const previewContainer = document.querySelector('.preview-container');
-                    
-                    const debugInfo = document.createElement('div');
-                    debugInfo.className = 'preview-row';
-                    debugInfo.style.marginTop = '10px';
-                    
-                    const debugTitle = document.createElement('span');
-                    debugTitle.className = 'preview-label';
-                    debugTitle.textContent = 'Current URL:';
-                    
-                    const debugValue = document.createElement('span');
-                    debugValue.className = 'preview-value';
-                    debugValue.textContent = url;
-                    
-                    debugInfo.appendChild(debugTitle);
-                    debugInfo.appendChild(debugValue);
-                    
-                    // Remove existing debug info if it exists
-                    const existingDebug = document.getElementById('debug-info');
-                    if (existingDebug) {
-                        existingDebug.remove();
-                    }
-                    
-                    debugInfo.id = 'debug-info';
-                    previewContainer.appendChild(debugInfo);
-                    
-                    // Add detection information
-                    const detectionInfo = document.createElement('div');
-                    detectionInfo.className = 'preview-row';
-                    
-                    const detectionTitle = document.createElement('span');
-                    detectionTitle.className = 'preview-label';
-                    detectionTitle.textContent = 'Detected as:';
-                    
-                    const detectionValue = document.createElement('span');
-                    detectionValue.className = 'preview-value';
-                    
-                    if (url.includes('music.youtube.com')) {
-                        detectionValue.textContent = 'YouTube Music (Not getting data!)';
-                        detectionValue.style.color = '#FF0000';
-                    } else if (url.includes('youtube.com/watch')) {
-                        detectionValue.textContent = 'YouTube Video';
-                    } else {
-                        detectionValue.textContent = 'Not a YouTube page';
-                    }
-                    
-                    detectionInfo.appendChild(detectionTitle);
-                    detectionInfo.appendChild(detectionValue);
-                    
-                    // Remove existing detection info if it exists
-                    const existingDetection = document.getElementById('detection-info');
-                    if (existingDetection) {
-                        existingDetection.remove();
-                    }
-                    
-                    detectionInfo.id = 'detection-info';
-                    previewContainer.appendChild(detectionInfo);
+            // Enable manual fix button for potential future use
+            // manualFixButton.style.display = 'block';
+        } else {
+            // Try to get backup data from localStorage
+            chrome.storage.local.get(['popupVideoData'], (result) => {
+                if (result.popupVideoData) {
+                    console.log('Using backup data from popupVideoData');
+                    originalTitleElement.textContent = result.popupVideoData.originalTitle || 'Not available';
+                    filteredTitleElement.textContent = result.popupVideoData.filteredTitle || 'Not available';
+                    channelNameElement.textContent = result.popupVideoData.channel || 'Not available';
+                } else {
+                    originalTitleElement.textContent = 'Not available';
+                    filteredTitleElement.textContent = 'Not available';
+                    channelNameElement.textContent = 'Not available';
                 }
             });
+            
+            // Hide manual fix button
+            manualFixButton.style.display = 'none';
+            
+            // Add debug information about current tab
+            const previewContainer = document.querySelector('.preview-container');
+            
+            // Create debug info section
+            const debugInfo = document.createElement('div');
+            debugInfo.className = 'preview-row';
+            debugInfo.style.marginTop = '10px';
+            
+            const debugTitle = document.createElement('span');
+            debugTitle.className = 'preview-label';
+            debugTitle.textContent = 'Current URL:';
+            
+            const debugValue = document.createElement('span');
+            debugValue.className = 'preview-value';
+            debugValue.textContent = currentTabUrl || 'No URL detected';
+            
+            debugInfo.appendChild(debugTitle);
+            debugInfo.appendChild(debugValue);
+            
+            // Remove existing debug info if it exists
+            const existingDebug = document.getElementById('debug-info');
+            if (existingDebug) {
+                existingDebug.remove();
+            }
+            
+            debugInfo.id = 'debug-info';
+            previewContainer.appendChild(debugInfo);
+            
+            // Add detection information
+            const detectionInfo = document.createElement('div');
+            detectionInfo.className = 'preview-row';
+            
+            const detectionTitle = document.createElement('span');
+            detectionTitle.className = 'preview-label';
+            detectionTitle.textContent = 'Detected as:';
+            
+            const detectionValue = document.createElement('span');
+            detectionValue.className = 'preview-value source-logo-container';
+            
+            // Create logo element with appropriate status indication
+            const logoImg = document.createElement('img');
+            logoImg.className = 'source-logo';
+            
+            const logoStatusIndicator = document.createElement('span');
+            logoStatusIndicator.className = 'logo-status-indicator';
+            
+            if (currentTabUrl.includes('music.amazon')) {
+                logoImg.src = 'icons/amazon-music-logo.png';
+                logoImg.alt = 'Amazon Music';
+                logoImg.title = 'Amazon Music';
+                logoStatusIndicator.textContent = 'Not getting data!';
+                logoStatusIndicator.style.color = '#FF0000';
+            } else if (currentTabUrl.includes('music.youtube.com')) {
+                logoImg.src = 'icons/youtube-music-logo.png';
+                logoImg.alt = 'YouTube Music';
+                logoImg.title = 'YouTube Music';
+                logoStatusIndicator.textContent = 'Not getting data!';
+                logoStatusIndicator.style.color = '#FF0000';
+            } else if (currentTabUrl.includes('youtube.com/watch')) {
+                logoImg.src = 'icons/youtube-logo.png';
+                logoImg.alt = 'YouTube';
+                logoImg.title = 'YouTube';
+                logoStatusIndicator.textContent = 'Video detected';
+            } else {
+                detectionValue.textContent = 'Not a supported page';
+            }
+            
+            // Only add the logo if it's a supported page
+            if (currentTabUrl.includes('youtube.com') || currentTabUrl.includes('music.amazon')) {
+                detectionValue.appendChild(logoImg);
+                detectionValue.appendChild(logoStatusIndicator);
+            }
+            
+            detectionInfo.appendChild(detectionTitle);
+            detectionInfo.appendChild(detectionValue);
+            
+            // Remove existing detection info if it exists
+            const existingDetection = document.getElementById('detection-info');
+            if (existingDetection) {
+                existingDetection.remove();
+            }
+            
+            detectionInfo.id = 'detection-info';
+            previewContainer.appendChild(detectionInfo);
         }
     }
 
@@ -194,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         statusIndicator.className = `status-indicator ${isConnected ? 'connected' : 'disconnected'}`;
-        statusText.textContent = isConnected ? 'Connected to Songify' : 'Not connected';
+        statusText.textContent = isConnected ? 'Connected to Songify' : 'Not connected to Songify';
     }
 
     function checkConnection() {
@@ -384,50 +517,83 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Load saved port
-    chrome.storage.local.get(['websocketPort'], (result) => {
-        if (chrome.runtime.lastError) {
-            showStatus('Failed to load settings', true);
-            return;
+    // Load the port setting
+    chrome.storage.local.get(['port', 'enableLogging'], (result) => {
+        if (result.port) {
+            portInput.value = result.port;
         }
-        if (result.websocketPort) {
-            portInput.value = result.websocketPort;
-        }
-        checkConnection();
+        
+        // Set the logging toggle state
+        enableLoggingToggle.checked = result.enableLogging === true;
     });
+
+    // Save the port setting
+    saveButton.addEventListener('click', () => {
+        const port = portInput.value.trim();
+        chrome.storage.local.set({ port }, () => {
+            showStatus('Settings saved successfully!');
+            
+            // Notify background script to reconnect with new port
+            chrome.runtime.sendMessage({ type: 'RECONNECT_WEBSOCKET', port });
+        });
+    });
+    
+    // Toggle debug logging
+    enableLoggingToggle.addEventListener('change', () => {
+        const enableLogging = enableLoggingToggle.checked;
+        chrome.storage.local.set({ enableLogging }, () => {
+            showStatus(`Debug logging ${enableLogging ? 'enabled' : 'disabled'}`);
+            
+            // Notify all parts of the extension about the logging change
+            chrome.runtime.sendMessage({ 
+                type: 'LOGGING_STATE_CHANGED', 
+                enableLogging 
+            });
+        });
+    });
+
+    // Handle manual fix button (for future use)
+    if (manualFixButton) {
+        manualFixButton.addEventListener('click', () => {
+            // Placeholder for future manual title editing feature
+            showStatus('Manual editing feature coming soon!');
+        });
+    }
 
     // Listen for connection status updates
     chrome.runtime.onMessage.addListener((message) => {
         if (message.type === 'CONNECTION_STATUS') {
             updateConnectionStatus(message.isConnected);
         } else if (message.type === 'VIDEO_INFO_UPDATE') {
-            updatePreviewSection(message.data);
-        }
-    });
-
-    saveButton.addEventListener('click', () => {
-        const port = parseInt(portInput.value);
-        
-        if (port && port >= 1 && port <= 65535) {
-            chrome.storage.local.set({ websocketPort: port }, () => {
-                if (chrome.runtime.lastError) {
-                    showStatus('Failed to save port', true);
-                    return;
-                }
-                showStatus('Port saved successfully!');
-                setTimeout(checkConnection, 1000);
-            });
-        } else {
-            showStatus('Please enter a valid port number (1-65535)', true);
+            console.log('Received VIDEO_INFO_UPDATE:', message.data);
+            
+            // Store the updated data
+            if (message.data) {
+                const storageData = {
+                    ...message.data,
+                    timestamp: Date.now()
+                };
+                chrome.storage.local.set({ 
+                    currentVideoData: storageData,
+                    popupVideoData: storageData 
+                }, () => {
+                    console.log('Stored updated video data in storage');
+                    
+                    // Update the UI immediately if we're in the popup
+                    if (document.getElementById('tab-now-playing').classList.contains('active')) {
+                        updatePreviewSection(message.data);
+                    }
+                });
+            }
         }
     });
 
     // Check connection status periodically
     const connectionCheckInterval = setInterval(checkConnection, 5000);
     
-    // Check video data periodically when filters tab is active
+    // Check video data periodically when Now Playing tab is active
     const videoDataInterval = setInterval(() => {
-        if (document.getElementById('tab-filters').classList.contains('active')) {
+        if (document.getElementById('tab-now-playing').classList.contains('active')) {
             requestVideoData();
         }
     }, 5000);
