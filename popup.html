@@ -387,7 +387,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    
+
     code {
       background-color: rgba(255, 255, 255, 0.1);
       padding: 2px 4px;
@@ -438,27 +438,27 @@
       align-items: center;
       margin-bottom: 10px;
     }
-    
+
     .settings-description {
       font-size: 12px;
       color: var(--songify-grey);
       margin-top: 8px;
       line-height: 1.4;
     }
-    
+
     .switch {
       position: relative;
       display: inline-block;
       width: 44px;
       height: 24px;
     }
-    
+
     .switch input {
       opacity: 0;
       width: 0;
       height: 0;
     }
-    
+
     .slider {
       position: absolute;
       cursor: pointer;
@@ -469,7 +469,7 @@
       background-color: rgba(255, 255, 255, 0.2);
       transition: .4s;
     }
-    
+
     .slider:before {
       position: absolute;
       content: "";
@@ -480,19 +480,19 @@
       background-color: white;
       transition: .4s;
     }
-    
-    input:checked + .slider {
+
+    input:checked+.slider {
       background-color: var(--songify-green);
     }
-    
-    input:checked + .slider:before {
+
+    input:checked+.slider:before {
       transform: translateX(20px);
     }
-    
+
     .slider.round {
       border-radius: 24px;
     }
-    
+
     .slider.round:before {
       border-radius: 50%;
     }
@@ -501,7 +501,7 @@
       margin-top: 10px;
       padding: 10px;
     }
-    
+
     /* Source logo styling */
     .source-logo-container {
       display: flex;
@@ -509,13 +509,13 @@
       justify-content: flex-start;
       padding: 8px 12px;
     }
-    
+
     .source-logo {
       height: 24px;
       width: auto;
       object-fit: contain;
     }
-    
+
     .logo-status-indicator {
       margin-left: 10px;
       font-size: 12px;
@@ -573,7 +573,7 @@
         <!-- Settings Subtabs -->
         <div class="settings-subtabs">
           <div class="subtab-buttons">
-            <button class="subtab-button active" data-subtab="connection">Connection</button>
+            <button class="subtab-button active" data-subtab="connection">General</button>
             <button class="subtab-button" data-subtab="filtering">Filtering</button>
           </div>
 
@@ -584,7 +584,19 @@
               <input type="number" id="port" min="1" max="65535" placeholder="Enter port number (default: 65530)">
               <button id="save" style="margin-top: 15px;">Save Settings</button>
             </div>
+
+            <div class="form-group">
+              <div class="toggle-container">
+                <label for="enableLogging">Enable Debug Logging</label>
+                <label class="switch">
+                  <input type="checkbox" id="enableLogging">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <p class="settings-description">When enabled, debug messages will be printed to the browser console. Keep this disabled unless you're troubleshooting issues.</p>
+            </div>
           </div>
+
 
           <!-- Filtering Subtab Content -->
           <div class="subtab-content" id="subtab-filtering">
@@ -616,19 +628,9 @@
                 <!-- Terms will be added here dynamically -->
               </div>
             </div>
-
-            <div class="form-group">
-              <div class="toggle-container">
-                <label for="enableLogging">Enable Debug Logging</label>
-                <label class="switch">
-                  <input type="checkbox" id="enableLogging">
-                  <span class="slider round"></span>
-                </label>
-              </div>
-              <p class="settings-description">When enabled, debug messages will be printed to the browser console. Keep this disabled unless you're troubleshooting issues.</p>
-            </div>
           </div>
         </div>
+
       </div>
     </div>
 
